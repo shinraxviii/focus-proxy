@@ -30,7 +30,8 @@ export default async function handler(req, res) {
         const price     = meta.regularMarketPrice;
         const prev      = meta.chartPreviousClose;
         const changePct = ((price - prev) / prev) * 100;
-        return { label: LABELS[ticker] || ticker, price, changePct };
+        const marketTime = meta.regularMarketTime || null; // Unix seconds
+        return { label: LABELS[ticker] || ticker, price, changePct, marketTime };
       } catch (e) {
         return null;
       }
