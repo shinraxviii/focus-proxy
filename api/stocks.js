@@ -9,8 +9,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const TICKERS = ['APP','U','AAPL','TSLA','META','GOOG','NVDA','^GSPC','^IXIC','BTC-USD','ETH-USD','SOL-USD'];
-  const LABELS  = { 'BTC-USD': 'BTC', 'ETH-USD': 'ETH', 'SOL-USD': 'SOL', '^GSPC': 'S&P 500', '^IXIC': 'Nasdaq' };
+  const TICKERS = ['APP','U','AAPL','TSLA','META','GOOG','NVDA','^GSPC','^IXIC','BTC-USD','ETH-USD','SOL-USD','GC=F','SI=F','PL=F','CL=F'];
+  const LABELS  = { 'BTC-USD': 'BTC', 'ETH-USD': 'ETH', 'SOL-USD': 'SOL', '^GSPC': 'S&P 500', '^IXIC': 'Nasdaq', 'GC=F': 'Gold', 'SI=F': 'Silver', 'PL=F': 'Platinum', 'CL=F': 'Oil' };
 
   try {
     const results = await Promise.all(TICKERS.map(async (ticker) => {
