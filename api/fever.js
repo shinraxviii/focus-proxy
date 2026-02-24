@@ -19,12 +19,26 @@ export default async function handler(req, res) {
 
     const html = await response.text();
 
+    // Non-LA locations to filter out
+    const NON_LA_KEYWORDS = [
+      'miami', 'new york', 'chicago', 'san francisco', 'dallas', 'houston',
+      'atlanta', 'seattle', 'boston', 'denver', 'phoenix', 'san diego',
+      'las vegas', 'portland', 'philadelphia', 'washington dc', 'orlando',
+      'tampa', 'austin', 'nashville', 'detroit', 'minneapolis',
+    ];
+
+    function isLAEvent(name, venue) {
+      const text = (name + ' ' + venue).toLowerCase();
+      for (const city of NON_LA_KEYWORDS) {
+        if (text.includes(city)) return false;
+      }
+      return true;
+    }
+
     // Parse event cards: <a> tags linking to /m/{id} with title attrs and inner h3
-    // Structure: <a href="/m/500549" title="Event Name - Venue">...<h3>Event Name</h3>...rating...date...price...</a>
     const events = [];
     const seen = new Set();
 
-    // Match anchor tags with /m/ links that contain h3 titles
     const linkRegex = /<a[^>]*href="[^"]*\/m\/(\d+)"[^>]*>([\s\S]*?)<\/a>/gi;
     let match;
 
@@ -48,6 +62,9 @@ export default async function handler(req, res) {
         const parts = titleAttr[1].split(' - ');
         if (parts.length > 1) venue = parts[parts.length - 1].trim();
       }
+
+      // Filter: skip events not in the LA area
+      if (!isLAEvent(name, venue)) continue;
 
       // Extract rating (e.g. "4.7")
       let rating = '';
