@@ -11,6 +11,7 @@ export default async function handler(req, res) {
 
   const TICKERS = ['APP','U','AAPL','TSLA','META','GOOG','NVDA','^GSPC','^IXIC','BTC-USD','ETH-USD','SOL-USD','GC=F','SI=F','PL=F','CL=F'];
   const LABELS  = { 'BTC-USD': 'BTC', 'ETH-USD': 'ETH', 'SOL-USD': 'SOL', '^GSPC': 'S&P 500', '^IXIC': 'Nasdaq', 'GC=F': 'Gold', 'SI=F': 'Silver', 'PL=F': 'Platinum', 'CL=F': 'Oil' };
+  const NAMES   = { 'BTC-USD': 'Bitcoin', 'ETH-USD': 'Ethereum', 'SOL-USD': 'Solana', '^GSPC': 'S&P 500 Index', '^IXIC': 'Nasdaq Composite', 'GC=F': 'Gold Futures', 'SI=F': 'Silver Futures', 'PL=F': 'Platinum Futures', 'CL=F': 'Crude Oil' };
 
   try {
     const results = await Promise.all(TICKERS.map(async (ticker) => {
@@ -30,8 +31,10 @@ export default async function handler(req, res) {
         const price     = meta.regularMarketPrice;
         const prev      = meta.chartPreviousClose;
         const changePct = ((price - prev) / prev) * 100;
-        const marketTime = meta.regularMarketTime || null; // Unix seconds
-        return { label: LABELS[ticker] || ticker, price, changePct, marketTime };
+        const change    = price - prev;
+        const marketTime = meta.regularMarketTime || null;
+        const name = NAMES[ticker] || meta.shortName || meta.longName || ticker;
+        return { label: LABELS[ticker] || ticker, name, price, change, changePct, marketTime };
       } catch (e) {
         return null;
       }
