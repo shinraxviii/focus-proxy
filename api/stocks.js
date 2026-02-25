@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         const change    = price - prev;
         const marketTime = meta.regularMarketTime || null;
         const name = NAMES[ticker] || meta.shortName || meta.longName || ticker;
-        return { label: LABELS[ticker] || ticker, name, price, change, changePct, marketTime };
+        return { label: LABELS[ticker] || ticker, ticker, name, price, change, changePct, marketTime };
       } catch (e) {
         return null;
       }
