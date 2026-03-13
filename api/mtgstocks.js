@@ -47,8 +47,8 @@ export default async function handler(req, res) {
         const data = await fetchSealedPrices(id);
         // data is expected to have price category keys (e.g. "average", "market", "low", "high")
         // each containing arrays of [timestamp_ms, price] tuples
-        // Extract the "average" or first available category for the sparkline
-        const category = data.average || data.market || data.low || Object.values(data)[0] || [];
+        // Prefer market price, fall back to average
+        const category = data.market || data.average || data.low || Object.values(data)[0] || [];
         const history = category.map(pt => pt[1]); // just the price values
         const price = history.length > 0 ? history[history.length - 1] : null;
         results[id] = { price, history };
