@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const TICKERS = ['APP','U','APPS','AAPL','TSLA','META','GOOG','NVDA','^GSPC','^IXIC','BTC-USD','ETH-USD','SOL-USD','GC=F','SI=F','CL=F'];
+  const TICKERS = ['APP','U','APPS','LFTO','AAPL','TSLA','META','GOOG','NVDA','^GSPC','^IXIC','BTC-USD','ETH-USD','SOL-USD','GC=F','SI=F','CL=F'];
   const LABELS  = { 'BTC-USD': 'BTC', 'ETH-USD': 'ETH', 'SOL-USD': 'SOL', '^GSPC': 'S&P 500', '^IXIC': 'Nasdaq', 'GC=F': 'Gold', 'SI=F': 'Silver', 'CL=F': 'Oil' };
   const NAMES   = { 'BTC-USD': 'Bitcoin', 'ETH-USD': 'Ethereum', 'SOL-USD': 'Solana', '^GSPC': 'S&P 500 Index', '^IXIC': 'Nasdaq Composite', 'GC=F': 'Gold Futures', 'SI=F': 'Silver Futures', 'CL=F': 'Crude Oil' };
 
