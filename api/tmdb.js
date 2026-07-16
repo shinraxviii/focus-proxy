@@ -41,38 +41,51 @@ export default async function handler(req, res) {
   if (isV4) headers.Authorization = 'Bearer ' + key;
 
   try {
-    // Pull the first two pages of upcoming releases for a fuller list.
-    const all = [];
-    let windowMin = null, windowMax = null;
-    for (let page = 1; page <= 2; page++) {
-      let url = `${TMDB}/movie/upcoming?language=en-US&region=${encodeURIComponent(region)}&page=${page}`;
-      if (!isV4) url += `&api_key=${encodeURIComponent(key)}`;
-      const r = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
-      if (!r.ok) throw new Error('TMDB ' + r.status);
-      const data = await r.json();
-      if (Array.isArray(data.results)) all.push(...data.results);
-      if (data.dates) { windowMin = data.dates.minimum || windowMin; windowMax = data.dates.maximum || windowMax; }
-      if (page >= (data.total_pages || 1)) break;
+    // Window: today → +120 days, in the target region.
+    const now = new Date();
+    const gte = now.toISOString().slice(0, 10);
+    const lte = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    // Use /discover ranked by popularity so the list skews to mainstream /
+    // anticipated titles rather than tiny or obscure releases. Restricting to
+    // theatrical release types (2 = limited, 3 = wide) drops most VOD/festival
+    // noise; we relax that filter only if it leaves too few results.
+    async function discover(theatricalOnly) {
+      const out = [];
+      for (let page = 1; page <= 2; page++) {
+        const params = new URLSearchParams({
+          language: 'en-US',
+          region,
+          sort_by: 'popularity.desc',
+          include_adult: 'false',
+          include_video: 'false',
+          'release_date.gte': gte,
+          'release_date.lte': lte,
+          page: String(page),
+        });
+        if (theatricalOnly) params.set('with_release_type', '2|3');
+        let url = `${TMDB}/discover/movie?${params.toString()}`;
+        if (!isV4) url += `&api_key=${encodeURIComponent(key)}`;
+        const r = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+        if (!r.ok) throw new Error('TMDB ' + r.status);
+        const data = await r.json();
+        if (Array.isArray(data.results)) out.push(...data.results);
+        if (page >= (data.total_pages || 1)) break;
+      }
+      return out;
     }
 
-    // De-dupe by id (pages shouldn't overlap, but be safe)
+    let all = await discover(true);
+    if (all.length < 6) all = await discover(false);
+
+    // De-dupe, keep the most popular, then present chronologically.
     const seen = new Set();
     const unique = all.filter(m => (m && m.id != null && !seen.has(m.id)) && seen.add(m.id));
+    unique.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    const picked = unique.slice(0, 15)
+      .sort((a, b) => String(a.release_date).localeCompare(String(b.release_date)));
 
-    const today = new Date().toISOString().slice(0, 10); // UTC YYYY-MM-DD
-    const byDate = (a, b) => String(a.release_date).localeCompare(String(b.release_date));
-
-    // "Upcoming" = release date inside TMDB's returned window; degrade
-    // gracefully to future-dated, then to any dated result, so the card is
-    // never wrongly emptied when the API actually returned movies.
-    const inWindow = (m) => m.release_date
-      && (!windowMin || m.release_date >= windowMin)
-      && (!windowMax || m.release_date <= windowMax);
-    let picked = unique.filter(inWindow).sort(byDate);
-    if (picked.length < 5) picked = unique.filter(m => m.release_date && m.release_date >= today).sort(byDate);
-    if (!picked.length) picked = unique.filter(m => m.release_date).sort(byDate);
-
-    const movies = picked.slice(0, 15).map(m => ({
+    const movies = picked.map(m => ({
       id: m.id,
       title: m.title || m.original_title || 'Untitled',
       release: m.release_date || '',
