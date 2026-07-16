@@ -16,13 +16,19 @@ const GENRES = {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=43200'); // 6h CDN cache
 
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   const key = process.env.TMDB_API_KEY;
   if (!key) {
-    res.status(500).json({ error: 'TMDB_API_KEY env var is not set' });
+    // Never cache an error, and surface which TMDB-ish env var names this
+    // deployment can actually see, to diagnose a name/scope/project mismatch.
+    res.setHeader('Cache-Control', 'no-store');
+    const seen = Object.keys(process.env).filter(k => /tmdb/i.test(k));
+    res.status(500).json({
+      error: 'TMDB_API_KEY env var is not set',
+      envVarNamesSeen: seen.length ? seen : '(no env var name contains "tmdb")',
+    });
     return;
   }
 
@@ -78,12 +84,15 @@ export default async function handler(req, res) {
     }));
 
     if (!movies.length) {
+      res.setHeader('Cache-Control', 'no-store');
       res.status(502).json({ error: 'No upcoming movies returned' });
       return;
     }
 
+    res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=43200'); // 6h CDN cache on success only
     res.status(200).json({ region, movies });
   } catch (e) {
+    res.setHeader('Cache-Control', 'no-store');
     res.status(502).json({ error: e.message || 'TMDB fetch failed' });
   }
 }
