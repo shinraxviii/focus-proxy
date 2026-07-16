@@ -81,12 +81,16 @@ export default async function handler(req, res) {
     let all = await discover(true);
     if (all.length < 6) all = await discover(false);
 
-    // De-dupe, keep the most popular, then present chronologically.
+    // De-dupe. The pool is already TMDB's most-popular upcoming theatrical
+    // films; show the 7 SOONEST of them (date order) so imminent big releases
+    // always appear rather than being crowded out by higher-popularity films
+    // that open months later.
     const seen = new Set();
     const unique = all.filter(m => (m && m.id != null && !seen.has(m.id)) && seen.add(m.id));
-    unique.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-    const picked = unique.slice(0, 7)
-      .sort((a, b) => String(a.release_date).localeCompare(String(b.release_date)));
+    const picked = unique
+      .filter(m => m.release_date)
+      .sort((a, b) => String(a.release_date).localeCompare(String(b.release_date)))
+      .slice(0, 7);
 
     const movies = picked.map(m => ({
       id: m.id,
