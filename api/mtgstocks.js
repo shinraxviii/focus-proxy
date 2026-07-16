@@ -2,7 +2,10 @@
 // Proxies sealed product price data from api.mtgstocks.com
 // Usage: GET /api/mtgstocks?ids=5941,6243,8894,4496,7199
 
-const ALLOWED_IDS = new Set(['5941', '6243', '8894', '4496', '7199']);
+const ALLOWED_IDS = new Set([
+  '5941', '6243', '8894', '4496', '7199',
+  '7760', '8919', '6042', '5389', '4827',
+]);
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',

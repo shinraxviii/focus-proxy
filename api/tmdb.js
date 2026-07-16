@@ -28,16 +28,24 @@ export default async function handler(req, res) {
 
   const region = (req.query && req.query.region) || 'US';
 
+  // Accept either a v3 API key (api_key query param) or a v4 read access
+  // token (a JWT, sent as a Bearer header) — tolerate whichever was pasted.
+  const isV4 = /^eyJ/.test(key);
+  const headers = { Accept: 'application/json' };
+  if (isV4) headers.Authorization = 'Bearer ' + key;
+
   try {
     // Pull the first two pages of upcoming releases for a fuller list.
     const all = [];
+    let windowMin = null, windowMax = null;
     for (let page = 1; page <= 2; page++) {
-      const url = `${TMDB}/movie/upcoming?language=en-US&region=${encodeURIComponent(region)}`
-        + `&page=${page}&api_key=${encodeURIComponent(key)}`;
-      const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) });
+      let url = `${TMDB}/movie/upcoming?language=en-US&region=${encodeURIComponent(region)}&page=${page}`;
+      if (!isV4) url += `&api_key=${encodeURIComponent(key)}`;
+      const r = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
       if (!r.ok) throw new Error('TMDB ' + r.status);
       const data = await r.json();
       if (Array.isArray(data.results)) all.push(...data.results);
+      if (data.dates) { windowMin = data.dates.minimum || windowMin; windowMax = data.dates.maximum || windowMax; }
       if (page >= (data.total_pages || 1)) break;
     }
 
@@ -48,9 +56,14 @@ export default async function handler(req, res) {
     const today = new Date().toISOString().slice(0, 10); // UTC YYYY-MM-DD
     const byDate = (a, b) => String(a.release_date).localeCompare(String(b.release_date));
 
-    // Prefer strictly-future releases; if the region filter leaves us empty,
-    // fall back to whatever dated results we have.
-    let picked = unique.filter(m => m.release_date && m.release_date >= today).sort(byDate);
+    // "Upcoming" = release date inside TMDB's returned window; degrade
+    // gracefully to future-dated, then to any dated result, so the card is
+    // never wrongly emptied when the API actually returned movies.
+    const inWindow = (m) => m.release_date
+      && (!windowMin || m.release_date >= windowMin)
+      && (!windowMax || m.release_date <= windowMax);
+    let picked = unique.filter(inWindow).sort(byDate);
+    if (picked.length < 5) picked = unique.filter(m => m.release_date && m.release_date >= today).sort(byDate);
     if (!picked.length) picked = unique.filter(m => m.release_date).sort(byDate);
 
     const movies = picked.slice(0, 15).map(m => ({
