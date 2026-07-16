@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     const seen = new Set();
     const unique = all.filter(m => (m && m.id != null && !seen.has(m.id)) && seen.add(m.id));
     unique.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-    const picked = unique.slice(0, 15)
+    const picked = unique.slice(0, 7)
       .sort((a, b) => String(a.release_date).localeCompare(String(b.release_date)));
 
     const movies = picked.map(m => ({
