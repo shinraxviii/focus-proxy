@@ -41,7 +41,10 @@ export default async function handler(req, res) {
   if (isV4) headers.Authorization = 'Bearer ' + key;
 
   try {
-    // Window: today → +120 days, in the target region.
+    // Window: films whose ORIGINAL (primary) release falls in today → +120
+    // days. Filtering on primary_release_date (not any release date) excludes
+    // theatrical re-releases of old films, which would otherwise show up with
+    // their original decades-old dates.
     const now = new Date();
     const gte = now.toISOString().slice(0, 10);
     const lte = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -59,8 +62,8 @@ export default async function handler(req, res) {
           sort_by: 'popularity.desc',
           include_adult: 'false',
           include_video: 'false',
-          'release_date.gte': gte,
-          'release_date.lte': lte,
+          'primary_release_date.gte': gte,
+          'primary_release_date.lte': lte,
           page: String(page),
         });
         if (theatricalOnly) params.set('with_release_type', '2|3');
