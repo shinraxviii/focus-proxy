@@ -1,10 +1,16 @@
 // Vercel Serverless Function: /api/mtgstocks
 // Proxies sealed product price data from api.mtgstocks.com
 // Usage: GET /api/mtgstocks?ids=5941,6243,8894,4496,7199
+//
+// Ids are allowlisted so this endpoint can't be used to fetch arbitrary
+// upstream paths. It must be kept in sync with SEALED_PRODUCTS in the app:
+// an id missing here makes the request 400, and the card silently renders
+// that product at its placeholder price.
 
 const ALLOWED_IDS = new Set([
   '5941', '6243', '8894', '4496', '7199',
   '7760', '8919', '6042', '5389', '4827',
+  '12561',
 ]);
 
 const HEADERS = {
