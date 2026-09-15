@@ -19,7 +19,7 @@
 //       id, week, date (ISO), timeValid, state: 'pre'|'in'|'post', completed,
 //       detail: 'Final' | '12:30 - 3rd' | '',   // ESPN short status text
 //       home: true, neutral: false,
-//       opponent: { id, name, abbrev, logo, rank },
+//       opponent: { id, name, abbrev, logo, rank, record },
 //       venue: { name, city, state },
 //       broadcast: 'ESPN' | '',
 //       score: { us: 31, them: 17 } | null,
@@ -159,6 +159,7 @@ function normalizeEvent(ev, teamId) {
       abbrev: them.team?.abbreviation || '',
       logo: them.team?.logos?.[0]?.href || them.team?.logo || '',
       rank: rank && rank >= 1 && rank <= 25 ? rank : null,
+      record: them.record?.[0]?.summary || them.records?.[0]?.summary || '',
     },
     venue: {
       name: venue.fullName || venue.shortName || '',
