@@ -8,19 +8,19 @@
 // both paths share one parser.
 //
 //   GET /api/fpi?season=2026[&team=25]
-//   -> { source: <upstream url>, data: <ESPN payload trimmed to the team> }
+//   -> { source: <upstream url>, data: { team, season, predictives: [stat…], efficiencies: [stat…] } }
+//   where stat = { name, abbreviation, displayName, value, displayValue, description }
 
 const DEFAULT_TEAM = '25'; // California Golden Bears
 const UA = 'Mozilla/5.0 (compatible; FocusDashboard/1.0)';
 
 function candidates(season, team) {
-  const cfb = 'football/college-football';
+  const base = `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/${season}/powerindex`;
   return [
-    // FPI page feed: all teams with categories (fpi, projections, résumé/sos …)
-    `https://site.web.api.espn.com/apis/fitt/v3/sports/${cfb}/powerindex?region=us&lang=en&contentorigin=espn&limit=200&season=${season}`,
-    // Core API, per-team power index (two path forms seen in the wild)
-    `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/${season}/types/2/teams/${team}/powerindex?lang=en&region=us`,
-    `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/${season}/types/2/powerindex/${team}?lang=en&region=us`,
+    // One team's power index: { team, season, predictives: [stat…], efficiencies: [stat…] }
+    `${base}/${team}?lang=en&region=us`,
+    // League-wide list: { items: [ { team, predictives, efficiencies } … ] }
+    `${base}?limit=200&lang=en&region=us`,
   ];
 }
 
@@ -34,15 +34,15 @@ function teamIdOf(entry) {
 // Trim a payload to the requested team. Returns null if the team isn't there.
 function trim(payload, team) {
   if (!payload || typeof payload !== 'object') return null;
-  if (Array.isArray(payload.teams)) {
-    const hit = payload.teams.find((e) => teamIdOf(e) === String(team));
-    if (!hit) return null;
-    return { categories: payload.categories || [], teams: [hit] };
+  const isEntry = (e) => e && (Array.isArray(e.predictives) || Array.isArray(e.efficiencies));
+  if (Array.isArray(payload.items)) {
+    const hit = payload.items.find((e) => teamIdOf(e) === String(team));
+    return hit && isEntry(hit) ? { team: hit.team, season: hit.season, predictives: hit.predictives || [], efficiencies: hit.efficiencies || [] } : null;
   }
-  if (Array.isArray(payload.stats)) {
+  if (isEntry(payload)) {
     const id = teamIdOf(payload);
     if (id && id !== String(team)) return null;
-    return { team: payload.team || { id: String(team) }, stats: payload.stats };
+    return { team: payload.team || { id: String(team) }, season: payload.season, predictives: payload.predictives || [], efficiencies: payload.efficiencies || [] };
   }
   return null;
 }
