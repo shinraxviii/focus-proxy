@@ -31,20 +31,20 @@ function teamIdOf(entry) {
   return String(t.id ?? (m ? m[1] : ''));
 }
 
-// Trim a payload to the requested team. Returns null if the team isn't there.
+// Trim a payload to the requested team, keeping every stat group ESPN sends
+// (predictives, efficiencies, and any others) so the app's parser sees all
+// of them. Returns null if the team isn't there.
 function trim(payload, team) {
   if (!payload || typeof payload !== 'object') return null;
-  const isEntry = (e) => e && (Array.isArray(e.predictives) || Array.isArray(e.efficiencies));
-  if (Array.isArray(payload.items)) {
-    const hit = payload.items.find((e) => teamIdOf(e) === String(team));
-    return hit && isEntry(hit) ? { team: hit.team, season: hit.season, predictives: hit.predictives || [], efficiencies: hit.efficiencies || [] } : null;
-  }
-  if (isEntry(payload)) {
-    const id = teamIdOf(payload);
-    if (id && id !== String(team)) return null;
-    return { team: payload.team || { id: String(team) }, season: payload.season, predictives: payload.predictives || [], efficiencies: payload.efficiencies || [] };
-  }
-  return null;
+  const isEntry = (e) => e && typeof e === 'object' && Object.values(e).some((v) => Array.isArray(v) && v.length && v[0] && typeof v[0] === 'object' && ('value' in v[0] || 'displayValue' in v[0]));
+  let entry = payload;
+  if (Array.isArray(payload.items)) entry = payload.items.find((e) => teamIdOf(e) === String(team)) || null;
+  if (!isEntry(entry)) return null;
+  const id = teamIdOf(entry);
+  if (id && id !== String(team)) return null;
+  const out = { team: entry.team || { id: String(team) }, season: entry.season };
+  Object.keys(entry).forEach((k) => { if (k !== '$ref' && k !== 'team' && k !== 'season' && typeof entry[k] !== 'string') out[k] = entry[k]; });
+  return out;
 }
 
 export default async function handler(req, res) {
