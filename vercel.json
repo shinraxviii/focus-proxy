@@ -1,1 +1,5 @@
-{}
+{
+  "functions": {
+    "api/standard-meta.js": { "maxDuration": 30 }
+  }
+}
