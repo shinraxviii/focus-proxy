@@ -5,6 +5,7 @@
 // /api/<name> to lib/<name>.js, so the URLs are unchanged and adding an
 // endpoint means adding it to ROUTES below, not a new file in api/.
 
+import arenaMeta from '../lib/arena-meta.js';
 import books from '../lib/books.js';
 import cfb from '../lib/cfb.js';
 import claude from '../lib/claude.js';
@@ -22,6 +23,7 @@ import stocks from '../lib/stocks.js';
 import tmdb from '../lib/tmdb.js';
 
 const ROUTES = {
+  'arena-meta': arenaMeta,
   books,
   cfb,
   claude,
