@@ -13,6 +13,7 @@ import deals from '../lib/deals.js';
 import earnings from '../lib/earnings.js';
 import fever from '../lib/fever.js';
 import fpi from '../lib/fpi.js';
+import mcp from '../lib/mcp.js';
 import mtgstocks from '../lib/mtgstocks.js';
 import news from '../lib/news.js';
 import reddit from '../lib/reddit.js';
@@ -31,6 +32,7 @@ const ROUTES = {
   earnings,
   fever,
   fpi,
+  mcp,
   mtgstocks,
   news,
   reddit,
