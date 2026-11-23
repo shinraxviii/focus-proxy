@@ -22,6 +22,7 @@ import sorcery from '../lib/sorcery.js';
 import standardMeta from '../lib/standard-meta.js';
 import stocks from '../lib/stocks.js';
 import tmdb from '../lib/tmdb.js';
+import wow from '../lib/wow.js';
 
 const ROUTES = {
   'arena-meta': arenaMeta,
@@ -41,6 +42,7 @@ const ROUTES = {
   'standard-meta': standardMeta,
   stocks,
   tmdb,
+  wow,
 };
 
 export default function handler(req, res) {
